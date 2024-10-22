@@ -1,45 +1,113 @@
 # my global config
 global:
-  scrape_interval:     15s # By default, scrape targets every 15 seconds.
-  evaluation_interval: 15s # By default, scrape targets every 15 seconds.
-  # scrape_timeout is set to the global default (10s).
+  scrape_interval:     15s  # By default, scrape targets every 15 seconds.
+  evaluation_interval: 15s  # By default, scrape targets every 15 seconds.
+  scrape_timeout: 10s       # By default, scrape timeout is set to the global default (10s).
 
   # Attach these labels to any time series or alerts when communicating with
   # external systems (federation, remote storage, Alertmanager).
   external_labels:
-      monitor: 'codelab-monitor'
+      monitor: 'alertmanager'
 
 # Load rules once and periodically evaluate them according to the global 'evaluation_interval'.
 rule_files:
-  # - "first.rules"
-  # - "second.rules"
+  - "/alertmanager/alert.rules.yml"
 
 # A scrape configuration containing exactly one endpoint to scrape:
 # Here it's Prometheus itself.
 scrape_configs:
   # The job name is added as a label `job=<job_name>` to any timeseries scraped from this config.
   - job_name: 'prometheus'
-
-    # Override the global default and scrape targets from this job every 5 seconds.
+    scrape_interval: 5s  # Override the global default and scrape targets from this job every 5 seconds.
+    static_configs:
+      - targets: 
+        - 'localhost:9090'
+        labels:
+            instance: prometheus-server
+            service: web-server
+            environment: production
+  - job_name: 'greenmap-servers'
     scrape_interval: 5s
-
-    # metrics_path defaults to '/metrics'
-    # scheme defaults to 'http'.
-
     static_configs:
-      - targets: ['localhost:9090']
-  - job_name: "node"
-    scrape_interval: "15s"
+      - targets: 
+        - '192.168.100.19:9221'
+        labels:
+            instance: greenmap-stg-cron-server
+            service: cron-server
+            project: greenmap
+            environment: staging
+      - targets: 
+        - '192.168.100.16:9221'
+        labels:
+            instance: greenmap-prd-cron-server
+            service: cron-server
+            project: greenmap
+            environment: production
+      - targets: 
+        - '192.168.100.25:9221'
+        labels:
+            instance: greenmap-prd-db-server
+            service: db-server
+            project: greenmap
+            environment: production
+      - targets: 
+        - '192.168.100.31:9221'
+        labels:
+            instance: greenmap-prd-ai-server
+            service: ai-server
+            project: greenmap
+            environment: production
+  - job_name: 'trading-servers'
+    scrape_interval: 5s
     static_configs:
-      - targets: ['node_exporter:9100']
-  - job_name: 'cadvisor'
-    scrape_interval: "15s"
+      - targets: 
+        - '192.168.100.23:9221'
+        labels:
+            instance: trading-prd-web-server
+            service: web-server
+            project: trading
+            environment: production
+      - targets: 
+        - '192.168.100.27:9221'
+        labels:
+            instance: trading-prd-cron-server
+            service: cron-server
+            project: trading
+            environment: production
+  - job_name: 'pve-shita'
     static_configs:
-      - targets: ['cadvisor:8080']
+      - targets:
+        - 192.168.100.3  # Proxmox VE node 1
+        labels:
+            instance: proxmox-shita-node-server
+            service: node-server
+            project: proxmox
+            environment: production
+    metrics_path: /pve
+    params:
+      module: [default]
+    relabel_configs:
+      - target_label: __address__
+        replacement: 192.168.100.3:9221 # PVE address
+  - job_name: 'pve-ue'
+    static_configs:
+      - targets:
+        - 192.168.100.18  # Proxmox VE node 1
+        labels:
+            instance: proxmox-ue-node-server
+            service: node-server
+            project: proxmox
+            environment: production
+    metrics_path: /pve
+    params:
+      module: [default]
+    relabel_configs:
+      - target_label: __address__
+        replacement: 192.168.100.18:9221 # PVE address
 
 alerting:
   alertmanagers:
   - scheme: http
     static_configs:
     - targets:
-      - "alertmanager:9093"
+      - "server-monitor-alertmanager:9093"

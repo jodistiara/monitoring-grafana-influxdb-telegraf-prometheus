@@ -1,0 +1,31 @@
+{{ define "__text_alert_firing_list" }}
+{{ range . }}
+Instance: {{ .Labels.instance }}
+Severity: {{ .Labels.severity }}
+Annotations:
+{{ range .Annotations.SortedPairs }} - {{ .Name }} = {{ .Value }}
+{{ end }} - source: {{ .GeneratorURL }}
+
+{{ end }}
+{{ end }}
+
+{{ define "__text_alert_resolved_list" }}
+{{ range . }}
+Instance: {{ .Labels.instance }}
+Severity: {{ .Labels.severity }}
+Source: {{ .GeneratorURL }}
+
+{{ end }}
+{{ end }}
+
+{{ define "discord.tmpl.message" }}
+{{ if gt (len .Alerts.Firing) 0 }}
+### Alerts Firing: {{ .GroupLabels.alertname }}
+{{ template "__text_alert_firing_list" .Alerts.Firing }}
+{{ end }}
+
+{{ if gt (len .Alerts.Resolved) 0 }}
+### Alerts Resolved: {{ .GroupLabels.alertname }}
+{{ template "__text_alert_resolved_list" .Alerts.Resolved }}
+{{ end }}
+{{ end }}

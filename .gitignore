@@ -70,7 +70,8 @@ monitoring.backup
 monitoring/monitoring_*_dir
 **/*.bak_remove
 **/*.wrapped
-data
 
 # Keys
 **/*.pem
+
+.env*

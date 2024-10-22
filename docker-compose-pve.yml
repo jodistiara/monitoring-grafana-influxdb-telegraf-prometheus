@@ -1,0 +1,10 @@
+version: '3'
+services:
+    pve-agent:
+        image: prompve/prometheus-pve-exporter
+        container_name: server-monitor-agent
+        ports:
+            - 9221:9221
+        volumes:
+            - /etc/prometheus/pve.yml:/etc/prometheus/pve.yml:ro
+        restart: always

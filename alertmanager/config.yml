@@ -1,10 +1,19 @@
+# The root route on which each incoming alert enters.
 route:
-    receiver: 'slack'
+    group_by: [cluster, alertname]
+    receiver: discord_webhook
+    group_wait: 10s
+    group_interval: 5m
+    repeat_interval: 1h
+
 
 receivers:
-    - name: 'slack'
-      slack_configs:
-          - send_resolved: true
-            username: 'sebastian.blasaik'
-            channel: '#channel_name'
-            api_url: 'https://hooks.slack.com/services/'
+    - name: 'discord_webhook'
+      discord_configs:
+        - send_resolved: true
+          webhook_url: 
+          title: Prometheus-AlertManager
+          message: '{{ template "discord.tmpl.message" . }}'
+
+templates:
+    - '/etc/alertmanager/templates/discord.tmpl'

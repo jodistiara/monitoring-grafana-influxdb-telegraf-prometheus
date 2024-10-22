@@ -1,0 +1,88 @@
+groups:
+  - name: resourceAlert
+    rules:
+
+    # Alert for cpu usage > 80% for >5 minutes.
+    - alert: HighCPUUsageWarning
+      expr: 100 - (avg by (instance) (rate(node_cpu_seconds_total{mode="idle"}[1m])) * 100) > 80
+      for: 5m
+      labels:
+        severity: warning
+      annotations:
+        summary: "High CPU usage detected"
+        description: "CPU usage is above 80% on {{ $labels.instance }} for more than 5 minutes."
+
+    # Alert for cpu usage > 90% for >5 minutes.
+    - alert: HighCPUUsageCritical
+      expr: 100 - (avg by (instance) (rate(node_cpu_seconds_total{mode="idle"}[1m])) * 100) > 90
+      for: 5m
+      labels:
+        severity: critical
+      annotations:
+        summary: "High CPU usage detected"
+        description: "CPU usage is above 90% on {{ $labels.instance }} for more than 5 minutes."
+
+    # Alert for memory usage > 80% for >5 minutes.
+    - alert: HighMemoryUsageWarning
+      expr: node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes < 0.2
+      for: 5m
+      labels:
+        severity: warning
+      annotations:
+        summary: "High memory usage detected"
+        description: "Memory usage is above 80% on {{ $labels.instance }} for more than 5 minutes."
+
+    # Alert for memory usage > 90% for >5 minutes.
+    - alert: HighMemoryUsageCritical
+      expr: node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes < 0.1
+      for: 5m
+      labels:
+        severity: critical
+      annotations:
+        summary: "High memory usage detected"
+        description: "Memory usage is above 90% on {{ $labels.instance }} for more than 5 minutes."
+
+    # Alert for disk usage > 90% for >1 day
+    - alert: DiskSpaceWarning
+      expr: |
+          max by(device, instance) (1 - (node_filesystem_avail_bytes{device="/dev/mapper/ubuntu--vg-ubuntu--lv"} / node_filesystem_size_bytes{device="/dev/mapper/ubuntu--vg-ubuntu--lv"})) * 100 > 95
+      for: 1d
+      labels:
+        severity: warning
+      annotations:
+          summary: "Disk space is low on {{ $labels.instance }}"
+          description: "The disk on {{ $labels.instance }} is more than 90% full.\nCurrent Disk Usage: {{ humanize1024 $value }}% ."
+
+    # Alert for memory usage > 95% for >1h
+    - alert: DiskSpaceCritical
+      expr: |
+          max by(device, instance) (1 - (node_filesystem_avail_bytes{device="/dev/mapper/ubuntu--vg-ubuntu--lv"} / node_filesystem_size_bytes{device="/dev/mapper/ubuntu--vg-ubuntu--lv"})) * 100 >= 95
+      for: 1h
+      labels:
+        severity: critical
+      annotations:
+          summary: "Disk space is critically low on {{ $labels.instance }}"
+          description: "The disk on {{ $labels.instance }} is more than 95% full.\nCurrent Disk Usage: {{ humanize1024 $value }}% ."
+
+  - name: resourceDown
+    rules:
+    # Alert for any instance that is unreachable for >5 minutes.
+    - alert: InstanceDown
+      expr: up == 0
+      for: 5m
+      labels:
+        severity: critical
+      annotations:
+        summary: "Instance {{ $labels.instance }} down"
+        description: "Instance {{ $labels.instance }} has been down for more than 5 minutes."
+
+
+    # Alert for any instance that has a median request latency >1s.
+    - alert: APIHighRequestLatency
+      expr: api_http_request_latencies_second{quantile="0.5"} > 1
+      for: 10m
+      labels:
+        severity: warning
+      annotations:
+        summary: "High request latency on {{ $labels.instance }}"
+        description: "{{ $labels.instance }} has a median request latency above 1s (current value: {{ $value }}s)"
